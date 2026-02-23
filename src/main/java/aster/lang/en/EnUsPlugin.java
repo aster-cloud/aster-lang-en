@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 英文语言包插件 (en-US)。
@@ -38,6 +39,14 @@ public final class EnUsPlugin implements LexiconPlugin, VocabularyPlugin {
     public List<DomainVocabulary> getVocabularies() {
         return List.of(
             VocabularyPluginSupport.loadVocabulary(getClass(), "vocabularies/finance-loan-en-US.json")
+        );
+    }
+
+    @Override
+    public Map<String, String> getOverlayResources() {
+        return Map.of(
+                "typeInferenceRules", "overlays/type-inference-rules.json",
+                "lspUiTexts", "overlays/lsp-ui-texts.json"
         );
     }
 
