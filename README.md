@@ -1,5 +1,7 @@
 # aster-lang-en -- Aster CNL 英文语言包
 
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
 ## 概述
 
 提供英文（en-US）词法表、领域词汇和规范化规则，作为 Aster CNL 的基础语言包。
