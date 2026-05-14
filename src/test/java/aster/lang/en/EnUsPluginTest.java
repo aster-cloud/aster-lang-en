@@ -89,4 +89,14 @@ class EnUsPluginTest {
         EnUsPlugin plugin = new EnUsPlugin();
         assertThat(plugin.getTransformers()).isEmpty();
     }
+
+    @Test
+    @DisplayName("R7-Backend-4: providedLexiconIds 与 createLexicon().getId() 一致")
+    void testProvidedIdsMatchActualLexicon() {
+        // 防止 metadata 撒谎：hardcoded "en-US" 必须等于 JSON 实际 id
+        EnUsPlugin plugin = new EnUsPlugin();
+        assertThat(plugin.providedLexiconIds())
+            .as("plugin metadata 必须与 createLexicon() 返回 id 一致 —— 防止 hot-plug 误判")
+            .containsExactly(plugin.createLexicon().getId());
+    }
 }

@@ -30,6 +30,14 @@ public final class EnUsPlugin implements LexiconPlugin, VocabularyPlugin {
         return DynamicLexicon.fromJsonString(json);
     }
 
+    /**
+     * R6-M1: 提供静态 metadata 让 preview 零副作用。
+     */
+    @Override
+    public java.util.Set<String> providedLexiconIds() {
+        return java.util.Set.of("en-US");
+    }
+
     @Override
     public DomainVocabulary createVocabulary() {
         return VocabularyPluginSupport.loadVocabulary(getClass(), "vocabularies/insurance-auto-en-US.json");
