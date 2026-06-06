@@ -231,6 +231,129 @@ class EnUsCanonicalizerTest {
         }
     }
 
+    @Nested
+    @DisplayName("可选 is 连接词前缀比较（ADR 0013 #1b-i）")
+    class IsComparatorPrefixTests {
+
+        @Test
+        @DisplayName("is at least → >=（is 被吸收）")
+        void isAtLeast() {
+            String result = canonicalizer.canonicalize("score is at least 700");
+            assertTrue(result.contains(">="),
+                    "'is at least' 应规范化为 '>='，实际: " + result);
+            assertFalse(result.matches(".*\\bis\\b.*"),
+                    "连接词 'is' 应被吸收，结果不应再含独立 'is'，实际: " + result);
+        }
+
+        @Test
+        @DisplayName("is greater than → >（精确，非 >=）")
+        void isGreaterThan() {
+            String result = canonicalizer.canonicalize("score is greater than 700");
+            assertTrue(result.contains(">"), "应含 '>'，实际: " + result);
+            assertFalse(result.contains(">="), "'is greater than' 不应产生 '>='，实际: " + result);
+        }
+
+        @Test
+        @DisplayName("各比较词精确映射：< / <= / >（排除相邻运算符 + 断言 is 已吸收）")
+        void otherComparators() {
+            // 统一断言三件事：期望 operator、排除相邻 operator、is 已被吸收（不残留独立 is）。
+            assertComparator("x is less than 5", "<", "<=");
+            assertComparator("x is at most 5", "<=", null);
+            assertComparator("x is more than 5", ">", ">=");
+            assertComparator("x is under 5", "<", "<=");
+            assertComparator("x is over 5", ">", ">=");
+        }
+
+        /**
+         * @param input    含 is-前缀比较的源码
+         * @param expected 期望出现的运算符符号
+         * @param excluded 不应出现的相邻运算符（null 表示不检查）
+         */
+        private void assertComparator(String input, String expected, String excluded) {
+            String r = canonicalizer.canonicalize(input);
+            assertTrue(r.contains(expected), input + " 应含 '" + expected + "'，实际: " + r);
+            if (excluded != null) {
+                assertFalse(r.contains(excluded),
+                        input + " 不应含相邻运算符 '" + excluded + "'，实际: " + r);
+            }
+            assertFalse(r.matches(".*\\bis\\b.*"),
+                    input + " 的连接词 'is' 应被吸收，结果不应残留独立 'is'，实际: " + r);
+        }
+
+        @Test
+        @DisplayName("多空格：is at  least / is greater   than（与 TS 词法对齐）")
+        void multipleSpaces() {
+            String r1 = canonicalizer.canonicalize("score is at  least 700");
+            assertTrue(r1.contains(">=") && !r1.matches(".*\\bis\\b.*"),
+                    "多空格 'is at  least' 仍应吸收 is 并规范化为 '>='，实际: " + r1);
+            String r2 = canonicalizer.canonicalize("score is greater   than 700");
+            assertTrue(r2.contains(">") && !r2.matches(".*\\bis\\b.*"),
+                    "多空格 'is greater   than' 仍应处理，实际: " + r2);
+        }
+
+        @Test
+        @DisplayName("换行边界：is 与比较词跨行不吸收（与 TS 不跨 NEWLINE 对齐）")
+        void doesNotMatchAcrossNewlines() {
+            // `is` 在行尾、比较词在下一行：不应被吸收（[ \t]+ 不含 \n），
+            // 否则会把两行拼接并与 TS（不跨 NEWLINE token）分歧。换行必须保留，
+            // 且 `is` 不被删除（仍在结果中）。
+            String r1 = canonicalizer.canonicalize("score is\nat least 700");
+            assertTrue(r1.contains("\n"), "换行必须保留，不应拼接，实际: " + r1);
+            assertTrue(r1.matches("(?s).*\\bis\\b.*"),
+                    "跨行时 'is' 不应被吸收，应原样保留，实际: " + r1);
+            // 多词比较词内部跨行：`is at` 行尾、`least` 下一行——不应吸收 is。
+            String r2 = canonicalizer.canonicalize("score is at\nleast 700");
+            assertTrue(r2.contains("\n") && r2.matches("(?s).*\\bis\\b.*"),
+                    "比较词内部跨行时不应处理，is 应保留，实际: " + r2);
+        }
+
+        @Test
+        @DisplayName("保护：is equal to / is not equal to 不被本变换器误吸（仍交由 normalizeOperator）")
+        void doesNotTouchIsEqualTo() {
+            // 'is equal to' 的 is 不在比较词前缀范围内，应原样保留给后续等值处理。
+            String r1 = canonicalizer.canonicalize("x is equal to 5");
+            assertTrue(r1.toLowerCase().contains("is equal to"),
+                    "'is equal to' 不应被 is-comparator 拆解，实际: " + r1);
+            String r2 = canonicalizer.canonicalize("x is not equal to 5");
+            assertTrue(r2.toLowerCase().contains("is not equal to"),
+                    "'is not equal to' 不应被 is-comparator 拆解，实际: " + r2);
+        }
+
+        @Test
+        @DisplayName("保护：字符串字面量内的 \"is at least\" 不被改写")
+        void protectsStringLiterals() {
+            String input = "Return \"score is at least 700\".";
+            String result = canonicalizer.canonicalize(input);
+            assertTrue(result.contains("\"score is at least 700\""),
+                    "字符串内的 'is at least' 应原样保留，实际: " + result);
+        }
+
+        @Test
+        @DisplayName("保护：标识符片段（isover/thisAtLeast）不被误吸")
+        void doesNotTouchIdentifiers() {
+            // \b 词边界确保 'is' 必须是独立单词；'thisover'、'isover' 等不受影响。
+            String r1 = canonicalizer.canonicalize("thisover plus 1");
+            assertTrue(r1.contains("thisover"),
+                    "标识符 'thisover' 不应被改写，实际: " + r1);
+            // 'isover' 是单个标识符，开头虽含 'is' 但无词边界分隔，不应被拆。
+            String rIsover = canonicalizer.canonicalize("isover plus 1");
+            assertTrue(rIsover.contains("isover"),
+                    "标识符 'isover' 不应被拆成 'is over'，实际: " + rIsover);
+            // 'is' 后不是比较词时（裸 is）不处理——本变换器只管 is+比较词。
+            String r2 = canonicalizer.canonicalize("result is something");
+            assertTrue(r2.toLowerCase().contains("is something"),
+                    "裸 'is' 后非比较词不应被吸收，实际: " + r2);
+        }
+
+        @Test
+        @DisplayName("bare is（is 5）刻意不实现：is 原样保留")
+        void bareIsNotImplemented() {
+            String result = canonicalizer.canonicalize("x is 5");
+            assertTrue(result.toLowerCase().matches(".*\\bis\\b.*"),
+                    "bare 'is' 不应被本变换器处理（设计决策），实际: " + result);
+        }
+    }
+
     // ============================================================
     // 英语 Lexicon 无翻译测试
     // ============================================================
