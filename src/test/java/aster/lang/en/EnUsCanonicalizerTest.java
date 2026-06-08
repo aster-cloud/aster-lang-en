@@ -96,6 +96,27 @@ class EnUsCanonicalizerTest {
             String expected = "function with parameter";
             assertEquals(expected, canonicalizer.canonicalize(input));
         }
+
+        @Test
+        @DisplayName("不吞模块路径里的单字母大写段（risk.A 不应变 risk.）")
+        void testRemoveArticles_PreservesDottedModulePathSegment() {
+            // ADR 0015：单字母大写标识符段（如 risk.A、A.a）此前被 CASE_INSENSITIVE
+            // 冠词正则误判为冠词 'a' 而吞掉。冠词移除应排除 dotted 上下文。
+            assertEquals("Use risk.A version 1 as Score.",
+                canonicalizer.canonicalize("Use risk.A version 1 as Score."));
+            assertEquals("Return A.a(amount).",
+                canonicalizer.canonicalize("Return A.a(amount)."));
+        }
+
+        @Test
+        @DisplayName("真冠词仍移除（修复未误伤正常冠词）")
+        void testRemoveArticles_RealArticlesStillRemoved() {
+            assertEquals("Use risk.Scoring version 1 as Score.",
+                canonicalizer.canonicalize("Use risk.Scoring version 1 as Score."));
+            // 句中真冠词 a/the 仍被移除
+            assertEquals("define function to return value",
+                canonicalizer.canonicalize("define the function to return a value"));
+        }
     }
 
     // ============================================================
