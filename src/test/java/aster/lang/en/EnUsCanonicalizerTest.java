@@ -166,6 +166,28 @@ class EnUsCanonicalizerTest {
             assertEquals("Return a.",
                 canonicalizer.canonicalize("Return a."));
         }
+
+        @Test
+        @DisplayName("行末孤立标识符（无句末点）不吞——\\n 锚点与 EOF 哨兵")
+        void testArticleAsIdentifier_AtLineEnd() {
+            // 多行：a 在行末后跟 \n
+            assertEquals("Let a be 1\nReturn a",
+                canonicalizer.canonicalize("Let a be 1\nReturn a"));
+            // EOF：整个输入末尾无换行（哨兵换行兜底）
+            assertEquals("Return a",
+                canonicalizer.canonicalize("Return a"));
+            // 行末是 the / an 同样保留
+            assertEquals("Return the\nReturn an",
+                canonicalizer.canonicalize("Return the\nReturn an"));
+        }
+
+        @Test
+        @DisplayName("行末标识符保护不误伤字符串前的真冠词")
+        void testArticleAtLineEnd_DoesNotBreakStringArticle() {
+            // the "first" 的 the 落在段末，但后面不是 \n（是引号），仍被当真冠词移除
+            assertEquals("\"first\" and \"second\"",
+                canonicalizer.canonicalize("the \"first\" and the \"second\""));
+        }
     }
 
     // ============================================================
