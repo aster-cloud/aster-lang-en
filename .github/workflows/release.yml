@@ -1,11 +1,19 @@
 name: Release
 
+# DEPRECATED (ADR-0011): this standalone repo no longer publishes.
+# The en/zh/de packs (cloud.aster-lang:aster-lang-{en,zh,de}) are now published
+# from aster-lang-locales. The publish job below is permanently disabled
+# (if: false) to prevent re-publishing the same GAV from two sources.
+# See: https://github.com/aster-cloud/aster-lang-locales
+
 on:
   push:
     tags: ['v*']
 
 jobs:
   publish:
+    # DEPRECATED (ADR-0011): disabled — canonical publisher is aster-lang-locales.
+    if: false
     runs-on: ubuntu-latest
     permissions:
       contents: read

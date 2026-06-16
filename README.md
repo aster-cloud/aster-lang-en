@@ -1,5 +1,16 @@
 # aster-lang-en -- Aster CNL 英文语言包
 
+> ## ⚠️ DEPRECATED — 此仓库已废弃 (ADR-0011)
+>
+> **本独立仓库不再发布。** 英文/中文/德文语言包（`cloud.aster-lang:aster-lang-{en,zh,de}`）
+> 现已统一由合并仓库 **[aster-lang-locales](https://github.com/aster-cloud/aster-lang-locales)**
+> 发布（模块 `locales/en`）。工件坐标保持不变，消费者无需改动依赖。
+>
+> - 新的规范来源 / canonical home: **aster-lang-locales**（ADR-0011 全量切换）
+> - 本仓库的 `release.yml` 发布已被停用，以避免重复发布相同 GAV。
+> - 源码与 git 历史保留作存档；后续 lexicon 变更请在 aster-lang-locales 进行。
+> - 关联 issue: #9（已被本次切换取代 / superseded by the cutover）。
+
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 ## 概述
