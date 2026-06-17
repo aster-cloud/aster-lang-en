@@ -1,3 +1,6 @@
+// DEPRECATED (ADR-0011): canonical home is aster-lang-locales (module locales/en).
+// This standalone repo no longer publishes; coordinates cloud.aster-lang:aster-lang-en
+// are now released from aster-lang-locales. Source kept for archival only.
 plugins {
     `java-library`
     `maven-publish`
